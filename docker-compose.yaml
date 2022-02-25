@@ -1,0 +1,54 @@
+version: '3.7'
+services:
+  db:
+    build: db
+    restart: always
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=/run/secrets/db-password
+    volumes:
+      - db-volume:/var/lib/postgresql/data
+    networks:
+      - backend-network
+    secrets:
+      - db-password
+
+  server:
+    build: server
+    restart: always
+    ports:
+      - 8000:8000
+    depends_on:
+      - db
+    networks:
+      - backend-network
+      - frontend-network
+    secrets:
+      - db-password
+    volumes:
+      - ./server:/code
+
+  client:
+    build: client
+    restart: always
+    ports:
+      - 3000:3000
+    depends_on:
+      - server
+    environment:
+      - NODE_ENV=development
+    networks:
+      - frontend-network
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+volumes:
+  db-volume:
+secrets:
+  db-password:
+    file: db/password.txt
+networks:
+  backend-network:
+  frontend-network:
